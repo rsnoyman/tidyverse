@@ -15,19 +15,24 @@ select(diamonds, starts_with('c'), price)
 ?select
 
 # mutate ------------------------------------------------------------------
+mutate(diamonds, price = price * 1.3)
+mutate(diamonds, price_aud = price * 1.3)
 mutate(diamonds, ppc = price/carat)
 mutate(diamonds, colour = str_to_lower(colour))
 
 # filter ------------------------------------------------------------------
 # What are the different levels?
 distinct(diamonds, colour)$colour
+filter(diamonds, colour <= 'G')
 
 filter(diamonds, carat > 0.24, cut == 'Good')
+filter(diamonds, colour == 'I' | colour == 'J')
 filter(diamonds, colour %in% c('I', 'J'))
 
 # arrange -----------------------------------------------------------------
+arrange(diamonds, cut)
 arrange(diamonds, cut, colour)
-arrange(diamonds, desc(cut), colour)
+arrange(diamonds, desc(cut))
 
 # summarise ---------------------------------------------------------------
 # This is an important one. Its how we derive insights from a dataset
