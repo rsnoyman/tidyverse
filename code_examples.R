@@ -40,6 +40,49 @@ diamonds %>%
 # Really weird! Price increases as colour get worse?? 
 # We will explore this further. Think about what could be causing this
 
+# task 1 ------------------------------------------------------------------
+excellent_diamonds <- diamonds %>% 
+  filter(cut >= 'Very Good') %>%  # Only consider Very Good, Premium, Ideal Cut
+  filter(carat >= 0.3) %>%
+  mutate(ppc = price/(100*carat)) %>%
+  select(carat, price, ppc, colour = colour, clarity)
+
+
+# pivoting example --------------------------------------------------------
+relig_income %>% 
+  pivot_longer(-religion, names_to = 'income', values_to = 'count') %>%
+  pivot_wider(names_from = 'income', values_from = 'count')
+
+# task 2 ------------------------------------------------------------------
+carat_lower_bounds <- c(0.01, 0.04, 0.08, 0.15, 0.18, 
+                        0.23, 0.3, 0.4, 0.5, 0.7, 
+                        0.9, 1, 1.5, 2, 3, 4, 5)
+
+rapaport_report <- excellent_diamonds %>%
+  mutate(size_interval = cut(carat,
+                             carat_lower_bounds, 
+                             include.lowest = TRUE, 
+                             right = FALSE)) %>%
+  group_by(size_interval, colour, clarity) %>%
+  summarise(ppc = median(ppc), .groups = 'drop')
+
+# Single report
+rapaport_report %>%
+  filter(size_interval == '[1,1.5)') %>%
+  select(-size_interval) %>%
+  arrange(desc(clarity)) %>%
+  pivot_wider(names_from = clarity, values_from = ppc)
+
+# All reports
+rapaport_report %>%
+  group_split(size_interval) %>%
+  lapply(function(df) {
+    df %>%
+      select(-size_interval) %>%
+      arrange(desc(clarity)) %>%
+      pivot_wider(names_from = clarity, values_from = ppc)
+  })
+
 # ggplot ------------------------------------------------------------------
 # Impact of Colour
 diamonds %>%
@@ -68,7 +111,13 @@ diamonds %>%
   ggplot(aes(colour, mean_price)) +
   geom_col()
 
-# Another way to visulaise this
+# Another way to visualise this
+diamonds %>%
+  filter(carat < 2.5) %>%
+  ggplot(aes(x = carat, fill = colour)) + 
+  geom_histogram(bins = 5)
+
+# Prettify
 diamonds %>%
   filter(carat < 2.5) %>%
   ggplot(aes(x = carat, fill = colour)) + 
@@ -80,47 +129,14 @@ diamonds %>%
        fill = 'Colour') +
   theme(text = element_text(size = 25))
 
-# Let's look at carat vs price graph
+# Carats seem to be the main driver of price
 # Uneven distribution. Clustered at round numbers
 diamonds %>%
   slice_sample(n = 5000) %>%
   ggplot(aes(x = carat, y = price)) +
   geom_point() 
 
-# Most valuable before the bump
-diamonds %>%
-  slice_sample(n = 5000) %>%
-  mutate(ppc = price/carat) %>%
-  ggplot(aes(x = carat, y = ppc)) +
-  geom_point() +
-  geom_smooth()
-
-# Rapaport Report ---------------------------------------------------------
-carat_lower_bounds <- c(0.01, 0.04, 0.08, 0.15, 0.18, 
-                        0.23, 0.3, 0.4, 0.5, 0.7, 
-                        0.9, 1, 1.5, 2, 3, 4, 5)
-
-excellent_diamonds <- diamonds %>% 
-  filter(cut >= 'Very Good') %>%  # Only consider Very Good, Premium, Ideal Cut
-  filter(carat >= 0.3) %>%
-  mutate(ppc = price/(100*carat)) %>%
-  select(carat, price, ppc, colour = colour, clarity)
-
-rapaport_report <- excellent_diamonds %>%
-  mutate(size_interval = cut(carat,
-                             carat_lower_bounds, 
-                             include.lowest = TRUE, 
-                             right = FALSE)) %>%
-  group_by(size_interval, colour, clarity) %>%
-  summarise(ppc = median(ppc), .groups = 'drop')
-
-rapaport_report %>%
-  filter(size_interval == '[1,1.5)') %>%
-  select(-size_interval) %>%
-  arrange(desc(clarity)) %>%
-  pivot_wider(names_from = clarity, values_from = ppc)
-# pivot_longer(-colour, names_to = 'clarity', values_to = 'price_per_carat')
-
+# task 3 ------------------------------------------------------------------
 rapaport_report %>%
   filter(size_interval == '[1,1.5)') %>%
   ggplot(aes(x = reorder(clarity, desc(clarity)), 
