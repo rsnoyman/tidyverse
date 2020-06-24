@@ -15,6 +15,10 @@ select(diamonds, starts_with('c'), price)
 ?select
 
 # mutate ------------------------------------------------------------------
+# columns are vectorised
+x <- c(1, 2, 3)
+x*3 + x
+
 mutate(diamonds, price = price * 1.3)
 mutate(diamonds, price_aud = price * 1.3)
 mutate(diamonds, ppc = price/carat)
